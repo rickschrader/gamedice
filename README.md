@@ -7,7 +7,7 @@ Usage
 -----
 **The Screen**
 
-![alt text](https://github.com/FlashBIOS/gamedice/blob/master/screenshot.jpg "Game Die app screen")
+![alt text](http://gamemore.com/pebble/gamedice/screenshot.jpg "Game Die app screen")
 
 The screen is divided into three sections. 
 * The top most section is the menu bar containing the current time (so you know when to order your pizza) and battery status (if low). 
