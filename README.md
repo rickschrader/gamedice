@@ -1,7 +1,7 @@
 Game Dice
 =========
 
-A polyhedral dice roller for the Pebble Smartwatch.
+An animated polyhedral dice roller for the Pebble Smartwatch.
 
 Usage
 -----
