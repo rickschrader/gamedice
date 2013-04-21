@@ -26,7 +26,7 @@ PropertyAnimation prop_animation_out;
 PropertyAnimation prop_animation_in;
 PropertyAnimation prop_animation_in2;
 
-long seed;
+static long seed;
 
 typedef struct {
 	int count;
@@ -36,8 +36,8 @@ typedef struct {
 	} Dice;
 
 Dice die;
-bool updateCountText;
-int faces[] = {3, 4, 6, 8, 10, 12, 20, 100};
+static bool updateCountText;
+const int faces[] = {3, 4, 6, 8, 10, 12, 20, 100};
 
 void formatDiceString(char *string, Dice die) 
 {	
@@ -147,7 +147,8 @@ void roll_dice()
 
 void select_single_click_handler(ClickRecognizerRef recognizer, Window *window) 
 {
-	if(!updateCountText)
+	updateCountText = !updateCountText;
+	if(updateCountText)
 	{
 		text_layer_set_text(&statusLayer, QUANTITY_TEXT);
 	}
@@ -155,7 +156,6 @@ void select_single_click_handler(ClickRecognizerRef recognizer, Window *window)
 	{
 		text_layer_set_text(&statusLayer, FACES_TEXT);
 	}
-	updateCountText = !updateCountText;
 }
 
 void select_long_click_handler(ClickRecognizerRef recognizer, Window *window) 
@@ -205,11 +205,11 @@ void config_provider(ClickConfig **config, Window *window)
 
 	// Up button handlers
 	config[BUTTON_ID_UP]->click.handler = (ClickHandler) up_single_click_handler;
-	config[BUTTON_ID_UP]->click.repeat_interval_ms = 250;
+	config[BUTTON_ID_UP]->click.repeat_interval_ms = 500;
 	
 	// Down button handlers
 	config[BUTTON_ID_DOWN]->click.handler = (ClickHandler) down_single_click_handler;
-	config[BUTTON_ID_DOWN]->click.repeat_interval_ms = 250;
+	config[BUTTON_ID_DOWN]->click.repeat_interval_ms = 500;
 }
 
 void handle_init(AppContextRef ctx) {
