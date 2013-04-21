@@ -1,7 +1,7 @@
 Game Dice
 =========
 
-An animated polyhedral dice roller for the Pebble Smartwatch.
+Game Dice is an animated polyhedral dice roller for the Pebble Smartwatch and those who play table top role played games or board games, or even people who have trouble making decisions. It will roll dice in all the common polyhedral flavors: d3, d4, d6, d8, d10, d12, d20, and d100.
 
 ![alt text](https://goltz.me/pebble/gamedice/screenshot.jpg "Game Die app screen")
 
