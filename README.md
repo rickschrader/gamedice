@@ -7,6 +7,8 @@ Usage
 -----
 **The Screen**
 
+![alt text](https://goltz.me/pebble/gamedice/screenshot.jpg "Game Die app screen")
+
 The screen is divided into three sections. 
 * The top most section is the menu bar containing the current time (so you know when to order your pizza) and battery status (if low). 
 * The second section, with the white background, contains the result of the dice roll. 
