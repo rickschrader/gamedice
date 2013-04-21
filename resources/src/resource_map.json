@@ -1,0 +1,17 @@
+
+{"friendlyVersion": "0.1",
+ "versionDefName": "DICE_ROLLER_RESOURCES",
+ "media": [
+	{
+        "type": "png",
+        "defName": "IMAGE_MENU_ICON",
+        "file": "images/menu_icon.png"
+	},   
+	{
+	    "type":"font",
+		"characterRegex": "[0-9]",
+	    "defName":"FONT_MONTSERRAT_NUMBERS_46",
+	    "file":"fonts/Montserrat-Bold.ttf"
+	   }
+	  ]
+}
