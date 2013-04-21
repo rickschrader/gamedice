@@ -11,7 +11,7 @@
 #define FACES_TEXT "d#"
 
 PBL_APP_INFO(MY_UUID,
-             "Pebble Dice", "Chris Goltz",
+             "Game Dice", "Chris Goltz",
              1, 0, /* App version */
              RESOURCE_ID_IMAGE_MENU_ICON,
              APP_INFO_STANDARD_APP);
@@ -24,6 +24,7 @@ TextLayer statusLayer;
 
 PropertyAnimation prop_animation_out;
 PropertyAnimation prop_animation_in;
+PropertyAnimation prop_animation_in2;
 
 long seed;
 
@@ -31,18 +32,17 @@ typedef struct {
 	int count;
 	int face;
 	int value;
-	int update;
+	//int update;
 	} Dice;
 
-Dice d20;
+Dice die;
 bool updateCountText;
-const int faces[] = {3, 4, 6, 8, 10, 12, 20, 100};
-
+int faces[] = {3, 4, 6, 8, 10, 12, 20, 100};
 
 void formatDiceString(char *string, Dice die) 
 {	
 	char *t = "%dd%d";
-	mini_snprintf(string, 8, t, die.count, faces[die.face]); 
+	mini_snprintf(string, 12, t, die.count, faces[die.face]); 
 }
 
 long get_seconds() 
@@ -68,21 +68,16 @@ char *itoa(int num)
 	char *string = buff;
 	
 	if(num >= 0) {
-		// count how many characters in the number
 		while(temp_num) {
 			temp_num /= 10;
 			length++;
 		}
 		
-		// assign the number to the buffer starting at the end of the 
-		// number and going to the begining since we are doing the
-		// integer to character comversion on the last number in the
-		// sequence
 		for(i = 0; i < length; i++) {
 		 	buff[(length-1)-i] = '0' + (num % 10);
 			num /= 10;
 		}
-		buff[i] = '\0'; // can't forget the null byte to properly end our string
+		buff[i] = '\0';
 	}
 	else
 		return "Unsupported Number";
@@ -97,18 +92,34 @@ int random(int max)
 	return ((seed % max) + 1);
 }
 
-void number_animation_stopped_handler(Animation *animation, bool finished, void *data)
+void number_animation_stopped_handler2(Animation *animation, bool finished, void *context)
 {
-	char *numberText = itoa(d20.value);
+	char *numberText = itoa(die.value);
 	text_layer_set_text(&numberLayer, numberText);
 
 	GRect rect = layer_get_frame(&numberLayer.layer);
 	rect.origin.y = 24;
 	
+	property_animation_init_layer_frame(&prop_animation_in2, &numberLayer.layer, NULL, &rect);
+	animation_set_duration(&prop_animation_in2.animation, 500);
+	animation_set_curve(&prop_animation_in2.animation, AnimationCurveEaseInOut);
+	animation_schedule(&prop_animation_in2.animation);
+}
+
+void number_animation_stopped_handler1(Animation *animation, bool finished, void *context)
+{
+	char *numberText = itoa(die.value);
+	text_layer_set_text(&numberLayer, numberText);
+
+	GRect rect = layer_get_frame(&numberLayer.layer);
+	rect.origin.y = 18;
+	
 	property_animation_init_layer_frame(&prop_animation_in, &numberLayer.layer, NULL, &rect);
 	animation_set_duration(&prop_animation_in.animation, 500);
-	animation_set_curve(&prop_animation_in.animation, AnimationCurveEaseIn);
-	
+	animation_set_curve(&prop_animation_in.animation, AnimationCurveEaseInOut);
+	animation_set_handlers(&prop_animation_in.animation, (AnimationHandlers) {
+			.stopped = (AnimationStoppedHandler)number_animation_stopped_handler2
+		}, &numberLayer);
 	animation_schedule(&prop_animation_in.animation);
 }
 
@@ -118,9 +129,9 @@ void do_number_animation() {
 	
 	property_animation_init_layer_frame(&prop_animation_out, &numberLayer.layer, NULL, &rect);
 	animation_set_duration(&prop_animation_out.animation, 500);
-	animation_set_curve(&prop_animation_out.animation, AnimationCurveEaseOut);
+	animation_set_curve(&prop_animation_out.animation, AnimationCurveEaseInOut);
 	animation_set_handlers(&prop_animation_out.animation, (AnimationHandlers) {
-			.stopped = (AnimationStoppedHandler)number_animation_stopped_handler
+			.stopped = (AnimationStoppedHandler)number_animation_stopped_handler1
 		}, &numberLayer);
 	animation_schedule(&prop_animation_out.animation);
 }
@@ -128,9 +139,9 @@ void do_number_animation() {
 void roll_dice()
 {	
 	int i = 0;
-	d20.value = 0;
-	for(i = 0; i < d20.count; i++) {
-		d20.value += random(faces[d20.face]);
+	die.value = 0;
+	for(i = 0; i < die.count; i++) {
+		die.value += random(faces[die.face]);
 	}
 }
 
@@ -138,12 +149,10 @@ void select_single_click_handler(ClickRecognizerRef recognizer, Window *window)
 {
 	if(!updateCountText)
 	{
-		//text_layer_set_text(&statusLayer, "set quantity");
 		text_layer_set_text(&statusLayer, QUANTITY_TEXT);
 	}
 	else
 	{
-		//text_layer_set_text(&statusLayer, "set sides");
 		text_layer_set_text(&statusLayer, FACES_TEXT);
 	}
 	updateCountText = !updateCountText;
@@ -158,29 +167,30 @@ void select_long_click_handler(ClickRecognizerRef recognizer, Window *window)
 void set_diceLayer_text()
 {
 	char *text = "";
-	formatDiceString(text, d20);
+	formatDiceString(text, die);
 	text_layer_set_text(&diceLayer, text);
 }
 
 void up_single_click_handler (ClickRecognizerRef recognizer, Window *window) {
 	if(updateCountText) {
-		d20.count++;
+		die.count++;
 	}
 	else {
-		if(d20.face + 1 <= 7)
-			d20.face++;
+		if(die.face + 1 <= 7)
+			die.face++;
 	}
 	set_diceLayer_text();
 }
 
 void down_single_click_handler (ClickRecognizerRef recognizer, Window *window) {
+	
 	if(updateCountText) {
-		if(d20.count - 1 >= 1)
-			d20.count--;
+		if(die.count - 1 >= 1)
+			die.count--;
 	}
 	else {
-		if(d20.face - 1 >= 0)
-			d20.face--;
+		if(die.face - 1 >= 0)
+			die.face--;
 	}
 	set_diceLayer_text();
 }
@@ -197,7 +207,6 @@ void config_provider(ClickConfig **config, Window *window)
 	config[BUTTON_ID_UP]->click.handler = (ClickHandler) up_single_click_handler;
 	config[BUTTON_ID_UP]->click.repeat_interval_ms = 500;
 	
-
 	// Down button handlers
 	config[BUTTON_ID_DOWN]->click.handler = (ClickHandler) down_single_click_handler;
 	config[BUTTON_ID_DOWN]->click.repeat_interval_ms = 500;
@@ -209,7 +218,7 @@ void handle_init(AppContextRef ctx) {
 
 	seed = get_seconds();
 
-	updateCountText = true;
+	updateCountText = false;
 
 	window_init(&window, "diceroller");
 	window_stack_push(&window, true /* Animated */);
@@ -227,7 +236,7 @@ void handle_init(AppContextRef ctx) {
 	text_layer_set_text_color(&statusLayer, GColorWhite);
 	text_layer_set_background_color(&statusLayer, GColorBlack);
 	text_layer_set_text_alignment(&statusLayer, GTextAlignmentCenter);
-	text_layer_set_text(&statusLayer, QUANTITY_TEXT);
+	text_layer_set_text(&statusLayer, FACES_TEXT);
 
 	// Number layer
 	GFont custom_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_MONTSERRAT_NUMBERS_46));
@@ -246,9 +255,10 @@ void handle_init(AppContextRef ctx) {
 	// Attach our buttons
 	window_set_click_config_provider(&window, (ClickConfigProvider) config_provider);
 	
-	d20.face = 6;
-	d20.count = 1;
-	d20.value = 0;
+	// Set up the die
+	die.face = 6;
+	die.count = 1;
+	die.value = 0;
 	set_diceLayer_text();
 }
 
