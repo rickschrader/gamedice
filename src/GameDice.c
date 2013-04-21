@@ -42,7 +42,7 @@ int faces[] = {3, 4, 6, 8, 10, 12, 20, 100};
 void formatDiceString(char *string, Dice die) 
 {	
 	char *t = "%dd%d";
-	mini_snprintf(string, 12, t, die.count, faces[die.face]); 
+	mini_snprintf(string, 8, t, die.count, faces[die.face]); 
 }
 
 long get_seconds() 
@@ -205,11 +205,11 @@ void config_provider(ClickConfig **config, Window *window)
 
 	// Up button handlers
 	config[BUTTON_ID_UP]->click.handler = (ClickHandler) up_single_click_handler;
-	config[BUTTON_ID_UP]->click.repeat_interval_ms = 500;
+	config[BUTTON_ID_UP]->click.repeat_interval_ms = 250;
 	
 	// Down button handlers
 	config[BUTTON_ID_DOWN]->click.handler = (ClickHandler) down_single_click_handler;
-	config[BUTTON_ID_DOWN]->click.repeat_interval_ms = 500;
+	config[BUTTON_ID_DOWN]->click.repeat_interval_ms = 250;
 }
 
 void handle_init(AppContextRef ctx) {
