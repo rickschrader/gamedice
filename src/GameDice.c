@@ -9,6 +9,12 @@
 #define STATUS_FONT FONT_KEY_GOTHIC_14
 #define QUANTITY_TEXT "#d"
 #define FACES_TEXT "d#"
+#define BOUNCE_SPOT 18
+#define REST_SPOT 24
+#define SCREEN_WIDTH 144
+#define SCREEN_HEIGHT 168
+#define REPEAT_SPEED 500
+#define ANIMATION_SPEED 500
 
 PBL_APP_INFO(MY_UUID,
              "Game Dice", "Chris Goltz",
@@ -38,6 +44,7 @@ typedef struct {
 Dice die;
 static bool updateCountText;
 const int faces[] = {3, 4, 6, 8, 10, 12, 20, 100};
+
 
 void formatDiceString(char *string, Dice die) 
 {	
@@ -98,10 +105,10 @@ void number_animation_stopped_handler2(Animation *animation, bool finished, void
 	text_layer_set_text(&numberLayer, numberText);
 
 	GRect rect = layer_get_frame(&numberLayer.layer);
-	rect.origin.y = 24;
+	rect.origin.y = REST_SPOT;
 	
 	property_animation_init_layer_frame(&prop_animation_in2, &numberLayer.layer, NULL, &rect);
-	animation_set_duration(&prop_animation_in2.animation, 500);
+	animation_set_duration(&prop_animation_in2.animation, ANIMATION_SPEED);
 	animation_set_curve(&prop_animation_in2.animation, AnimationCurveEaseInOut);
 	animation_schedule(&prop_animation_in2.animation);
 }
@@ -112,10 +119,10 @@ void number_animation_stopped_handler1(Animation *animation, bool finished, void
 	text_layer_set_text(&numberLayer, numberText);
 
 	GRect rect = layer_get_frame(&numberLayer.layer);
-	rect.origin.y = 18;
+	rect.origin.y = BOUNCE_SPOT;
 	
 	property_animation_init_layer_frame(&prop_animation_in, &numberLayer.layer, NULL, &rect);
-	animation_set_duration(&prop_animation_in.animation, 500);
+	animation_set_duration(&prop_animation_in.animation, ANIMATION_SPEED);
 	animation_set_curve(&prop_animation_in.animation, AnimationCurveEaseInOut);
 	animation_set_handlers(&prop_animation_in.animation, (AnimationHandlers) {
 			.stopped = (AnimationStoppedHandler)number_animation_stopped_handler2
@@ -128,7 +135,7 @@ void do_number_animation() {
 	rect.origin.y = 100;
 	
 	property_animation_init_layer_frame(&prop_animation_out, &numberLayer.layer, NULL, &rect);
-	animation_set_duration(&prop_animation_out.animation, 500);
+	animation_set_duration(&prop_animation_out.animation, ANIMATION_SPEED);
 	animation_set_curve(&prop_animation_out.animation, AnimationCurveEaseInOut);
 	animation_set_handlers(&prop_animation_out.animation, (AnimationHandlers) {
 			.stopped = (AnimationStoppedHandler)number_animation_stopped_handler1
@@ -171,7 +178,8 @@ void set_diceLayer_text()
 	text_layer_set_text(&diceLayer, text);
 }
 
-void up_single_click_handler (ClickRecognizerRef recognizer, Window *window) {
+void up_single_click_handler (ClickRecognizerRef recognizer, Window *window) 
+{
 	if(updateCountText) {
 		die.count++;
 	}
@@ -182,8 +190,8 @@ void up_single_click_handler (ClickRecognizerRef recognizer, Window *window) {
 	set_diceLayer_text();
 }
 
-void down_single_click_handler (ClickRecognizerRef recognizer, Window *window) {
-	
+void down_single_click_handler (ClickRecognizerRef recognizer, Window *window) 
+{
 	if(updateCountText) {
 		if(die.count - 1 >= 1)
 			die.count--;
@@ -205,11 +213,11 @@ void config_provider(ClickConfig **config, Window *window)
 
 	// Up button handlers
 	config[BUTTON_ID_UP]->click.handler = (ClickHandler) up_single_click_handler;
-	config[BUTTON_ID_UP]->click.repeat_interval_ms = 500;
+	config[BUTTON_ID_UP]->click.repeat_interval_ms = REPEAT_SPEED;
 	
 	// Down button handlers
 	config[BUTTON_ID_DOWN]->click.handler = (ClickHandler) down_single_click_handler;
-	config[BUTTON_ID_DOWN]->click.repeat_interval_ms = 500;
+	config[BUTTON_ID_DOWN]->click.repeat_interval_ms = REPEAT_SPEED;
 }
 
 void handle_init(AppContextRef ctx) {
@@ -224,14 +232,14 @@ void handle_init(AppContextRef ctx) {
 	window_stack_push(&window, true /* Animated */);
 	
 	// Dice layer
-	text_layer_init(&diceLayer, GRect(0, 105, 144/* width */, 30/* height */));
+	text_layer_init(&diceLayer, GRect(0, 105, SCREEN_WIDTH, 30));
 	text_layer_set_font(&diceLayer, fonts_get_system_font(DICE_FONT));
 	text_layer_set_text_color(&diceLayer, GColorWhite);
 	text_layer_set_background_color(&diceLayer, GColorBlack);
 	text_layer_set_text_alignment(&diceLayer, GTextAlignmentCenter);
 	
 	// Status layer
-	text_layer_init(&statusLayer, GRect(0, 134, 144/* width */, 18/* height */));
+	text_layer_init(&statusLayer, GRect(0, 134, SCREEN_WIDTH, 18));
 	text_layer_set_font(&statusLayer, fonts_get_system_font(STATUS_FONT));
 	text_layer_set_text_color(&statusLayer, GColorWhite);
 	text_layer_set_background_color(&statusLayer, GColorBlack);
@@ -240,7 +248,7 @@ void handle_init(AppContextRef ctx) {
 
 	// Number layer
 	GFont custom_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_MONTSERRAT_NUMBERS_46));
-	text_layer_init(&numberLayer, GRect(0, 24, 144/* width */, 70/* height */));
+	text_layer_init(&numberLayer, GRect(0, 24, SCREEN_WIDTH, 70));
 	text_layer_set_font(&numberLayer, custom_font);
 	text_layer_set_text_color(&numberLayer, GColorBlack);
 	text_layer_set_background_color(&numberLayer, GColorWhite);
