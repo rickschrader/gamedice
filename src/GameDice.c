@@ -7,10 +7,11 @@
 #define MY_UUID { 0x72, 0xC3, 0x7C, 0x97, 0xC9, 0xA0, 0x47, 0x7B, 0x83, 0xCC, 0x8F, 0xD6, 0x07, 0xD5, 0x87, 0xEE }
 #define DICE_FONT FONT_KEY_GOTHIC_28_BOLD
 #define STATUS_FONT FONT_KEY_GOTHIC_14
+#define NUMBERS_FONT FONT_KEY_GOTHAM_42_MEDIUM_NUMBERS
 #define QUANTITY_TEXT "#d"
 #define FACES_TEXT "d#"
-#define BOUNCE_SPOT 18
-#define REST_SPOT 24
+#define BOUNCE_SPOT 20
+#define REST_SPOT 28
 #define SCREEN_WIDTH 144
 #define SCREEN_HEIGHT 168
 #define REPEAT_SPEED 500
@@ -18,7 +19,7 @@
 
 PBL_APP_INFO(MY_UUID,
              "Game Dice", "Chris Goltz",
-             1, 0, /* App version */
+             1, 1, /* App version */
              RESOURCE_ID_IMAGE_MENU_ICON,
              APP_INFO_STANDARD_APP);
 
@@ -247,9 +248,8 @@ void handle_init(AppContextRef ctx) {
 	text_layer_set_text(&statusLayer, FACES_TEXT);
 
 	// Number layer
-	GFont custom_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_MONTSERRAT_NUMBERS_46));
-	text_layer_init(&numberLayer, GRect(0, 24, SCREEN_WIDTH, 70));
-	text_layer_set_font(&numberLayer, custom_font);
+	text_layer_init(&numberLayer, GRect(0, REST_SPOT, SCREEN_WIDTH, 70));
+	text_layer_set_font(&numberLayer, fonts_get_system_font(NUMBERS_FONT));
 	text_layer_set_text_color(&numberLayer, GColorBlack);
 	text_layer_set_background_color(&numberLayer, GColorWhite);
 	text_layer_set_text_alignment(&numberLayer, GTextAlignmentCenter);
