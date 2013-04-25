@@ -293,9 +293,9 @@ void handle_init(AppContextRef ctx) {
 	// Number layer
 	text_layer_init(&numberLayer, GRect(0, REST_SPOT, SCREEN_WIDTH, 50));
 	text_layer_set_font(&numberLayer, fonts_get_system_font(NUMBERS_FONT));
-	//text_layer_set_text_color(&numberLayer, GColorBlack);
-	text_layer_set_text_color(&numberLayer, GColorWhite);
-	text_layer_set_background_color(&numberLayer, GColorBlack);
+	text_layer_set_text_color(&numberLayer, GColorBlack);
+	// text_layer_set_text_color(&numberLayer, GColorWhite);
+	// text_layer_set_background_color(&numberLayer, GColorBlack);
 	text_layer_set_text_alignment(&numberLayer, GTextAlignmentCenter);
 	text_layer_set_text(&numberLayer, "0");
 
