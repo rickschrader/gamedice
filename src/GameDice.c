@@ -51,6 +51,9 @@ static bool updateCountText;
 static const int faces[] = {3, 4, 6, 8, 10, 12, 20, 100};
 static char diceValues[60];
 
+void construct_dice_values();
+
+
 void formatDiceString(char *string, Dice die) 
 {	
 	char *t = "%dd%d";
@@ -104,13 +107,17 @@ int random(int max)
 	return ((seed % max) + 1);
 }
 
+void change()
+{
+	text_layer_set_text(&diceValuesLayer, diceValues);
+}
+
 void number_animation_stopped_handler2(Animation *animation, bool finished, void *context)
 {
-	char *numberText = itoa(die.value);
-	text_layer_set_text(&numberLayer, numberText);
-
 	GRect rect = layer_get_frame(&numberLayer.layer);
 	rect.origin.y = REST_SPOT;
+	
+	text_layer_set_text(&diceValuesLayer, diceValues);
 	
 	property_animation_init_layer_frame(&prop_animation_in2, &numberLayer.layer, NULL, &rect);
 	animation_set_duration(&prop_animation_in2.animation, ANIMATION_SPEED);
@@ -161,20 +168,25 @@ void roll_dice()
 	}
 }
 
-void display_dice_values()
+void construct_dice_values()
 {
-	memset(&diceValues[0], 0, sizeof(diceValues)); // clear the array's old elements
-	const char *pad = "Rolls: ";
-	int k;
-	int n = sizeof(die.values)/sizeof(die.values[0]);
-	for (k = 0; k < n; k++)
+	if(die.count > 1)
 	{
-		char *temp = itoa(die.values[k]);
-		strcat(diceValues, pad);
-	    strcat(diceValues, temp);
-		pad = ", ";
+		memset(&diceValues[0], 0, sizeof(diceValues)); // clear the array's old elements
+		const char *pad = "Rolled: ";
+		int k;
+		int n = sizeof(die.values)/sizeof(die.values[0]);
+		for (k = 0; k < n; k++)
+		{
+			char *temp = itoa(die.values[k]);
+			if(strlen(temp))
+			{
+				strcat(diceValues, pad);
+			    strcat(diceValues, temp);
+				pad = ", ";
+			}
+		}
 	}
-	text_layer_set_text(&diceValuesLayer, diceValues);
 }
 
 void select_single_click_handler(ClickRecognizerRef recognizer, Window *window) 
@@ -194,7 +206,7 @@ void select_long_click_handler(ClickRecognizerRef recognizer, Window *window)
 {
 	roll_dice();
 	do_number_animation();
-	//display_dice_values();
+	construct_dice_values();
 }
 
 void set_diceLayer_text()
@@ -273,23 +285,25 @@ void handle_init(AppContextRef ctx) {
 	text_layer_set_text(&statusLayer, FACES_TEXT);
 
 	// Dice values layer
-	text_layer_init(&diceValuesLayer, GRect(0, 0, SCREEN_WIDTH, 30));
-	text_layer_set_font(&diceValuesLayer, fonts_get_system_font(VALUES_FONT));
+	text_layer_init(&diceValuesLayer, GRect(0, 0, SCREEN_WIDTH, 18));
+	text_layer_set_font(&diceValuesLayer, fonts_get_system_font(STATUS_FONT));
 	text_layer_set_text_color(&diceValuesLayer, GColorBlack);
 	text_layer_set_text_alignment(&diceValuesLayer, GTextAlignmentCenter);
 	
 	// Number layer
-	text_layer_init(&numberLayer, GRect(0, REST_SPOT, SCREEN_WIDTH, 70));
+	text_layer_init(&numberLayer, GRect(0, REST_SPOT, SCREEN_WIDTH, 50));
 	text_layer_set_font(&numberLayer, fonts_get_system_font(NUMBERS_FONT));
-	text_layer_set_text_color(&numberLayer, GColorBlack);
+	//text_layer_set_text_color(&numberLayer, GColorBlack);
+	text_layer_set_text_color(&numberLayer, GColorWhite);
+	text_layer_set_background_color(&numberLayer, GColorBlack);
 	text_layer_set_text_alignment(&numberLayer, GTextAlignmentCenter);
 	text_layer_set_text(&numberLayer, "0");
 
 	// Load layers
+	layer_add_child(&window.layer, &diceValuesLayer.layer);
 	layer_add_child(&window.layer, &numberLayer.layer);
 	layer_add_child(&window.layer, &diceLayer.layer);
 	layer_add_child(&window.layer, &statusLayer.layer);
-	layer_add_child(&window.layer, &diceValuesLayer.layer);
 	
 	// Attach our buttons
 	window_set_click_config_provider(&window, (ClickConfigProvider) config_provider);
