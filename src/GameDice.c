@@ -3,10 +3,12 @@
 #include "pebble_fonts.h"
 #include "resource_ids.auto.h"
 #include "mini-printf.h"
+#include "string.h"
 
 #define MY_UUID { 0x72, 0xC3, 0x7C, 0x97, 0xC9, 0xA0, 0x47, 0x7B, 0x83, 0xCC, 0x8F, 0xD6, 0x07, 0xD5, 0x87, 0xEE }
 #define DICE_FONT FONT_KEY_GOTHIC_28_BOLD
 #define STATUS_FONT FONT_KEY_GOTHIC_14
+#define VALUES_FONT FONT_KEY_GOTHIC_24
 #define NUMBERS_FONT FONT_KEY_GOTHAM_42_BOLD
 #define QUANTITY_TEXT "#d"
 #define FACES_TEXT "d#"
@@ -16,6 +18,7 @@
 #define SCREEN_HEIGHT 168
 #define REPEAT_SPEED 500
 #define ANIMATION_SPEED 500
+#define MAX_NUMBER_OF_DICE 10
 
 PBL_APP_INFO(MY_UUID,
              "Game Dice", "Chris Goltz",
@@ -23,29 +26,30 @@ PBL_APP_INFO(MY_UUID,
              RESOURCE_ID_IMAGE_MENU_ICON,
              APP_INFO_STANDARD_APP);
 
-Window window;
-
-TextLayer numberLayer;
-TextLayer diceLayer;
-TextLayer statusLayer;
-
-PropertyAnimation prop_animation_out;
-PropertyAnimation prop_animation_in;
-PropertyAnimation prop_animation_in2;
-
-static long seed;
-
 typedef struct {
 	int count;
 	int face;
 	int value;
-	//int update;
-	} Dice;
+	int values[MAX_NUMBER_OF_DICE];
+} Dice;
 
-Dice die;
+static Window window;
+
+static TextLayer numberLayer;
+static TextLayer diceLayer;
+static TextLayer statusLayer;
+static TextLayer diceValuesLayer;
+
+static PropertyAnimation prop_animation_out;
+static PropertyAnimation prop_animation_in;
+static PropertyAnimation prop_animation_in2;
+//static PropertyAnimation prop_animation_dice_values;
+
+static Dice die;
+static long seed;
 static bool updateCountText;
-const int faces[] = {3, 4, 6, 8, 10, 12, 20, 100};
-
+static const int faces[] = {3, 4, 6, 8, 10, 12, 20, 100};
+static char diceValues[60];
 
 void formatDiceString(char *string, Dice die) 
 {	
@@ -148,9 +152,29 @@ void roll_dice()
 {	
 	int i = 0;
 	die.value = 0;
+	memset(&die.values[0], 0, sizeof(die.values)); // clear the array's old elements
+	
 	for(i = 0; i < die.count; i++) {
-		die.value += random(faces[die.face]);
+		int roll = random(faces[die.face]);
+		die.values[i] = roll;
+		die.value += roll;
 	}
+}
+
+void display_dice_values()
+{
+	memset(&diceValues[0], 0, sizeof(diceValues)); // clear the array's old elements
+	const char *pad = "Rolls: ";
+	int k;
+	int n = sizeof(die.values)/sizeof(die.values[0]);
+	for (k = 0; k < n; k++)
+	{
+		char *temp = itoa(die.values[k]);
+		strcat(diceValues, pad);
+	    strcat(diceValues, temp);
+		pad = ", ";
+	}
+	text_layer_set_text(&diceValuesLayer, diceValues);
 }
 
 void select_single_click_handler(ClickRecognizerRef recognizer, Window *window) 
@@ -170,6 +194,7 @@ void select_long_click_handler(ClickRecognizerRef recognizer, Window *window)
 {
 	roll_dice();
 	do_number_animation();
+	//display_dice_values();
 }
 
 void set_diceLayer_text()
@@ -225,9 +250,9 @@ void handle_init(AppContextRef ctx) {
 	(void)ctx;
 	resource_init_current_app(&DICE_ROLLER_RESOURCES);
 
-	seed = get_seconds();
+	seed = get_seconds(); // Seed the random numbers
 
-	updateCountText = false;
+	updateCountText = false; // Set the value to control what gets updated when the up/down buttons are pressed
 
 	window_init(&window, "diceroller");
 	window_stack_push(&window, true /* Animated */);
@@ -247,11 +272,16 @@ void handle_init(AppContextRef ctx) {
 	text_layer_set_text_alignment(&statusLayer, GTextAlignmentCenter);
 	text_layer_set_text(&statusLayer, FACES_TEXT);
 
+	// Dice values layer
+	text_layer_init(&diceValuesLayer, GRect(0, 0, SCREEN_WIDTH, 30));
+	text_layer_set_font(&diceValuesLayer, fonts_get_system_font(VALUES_FONT));
+	text_layer_set_text_color(&diceValuesLayer, GColorBlack);
+	text_layer_set_text_alignment(&diceValuesLayer, GTextAlignmentCenter);
+	
 	// Number layer
 	text_layer_init(&numberLayer, GRect(0, REST_SPOT, SCREEN_WIDTH, 70));
 	text_layer_set_font(&numberLayer, fonts_get_system_font(NUMBERS_FONT));
 	text_layer_set_text_color(&numberLayer, GColorBlack);
-	text_layer_set_background_color(&numberLayer, GColorWhite);
 	text_layer_set_text_alignment(&numberLayer, GTextAlignmentCenter);
 	text_layer_set_text(&numberLayer, "0");
 
@@ -259,6 +289,7 @@ void handle_init(AppContextRef ctx) {
 	layer_add_child(&window.layer, &numberLayer.layer);
 	layer_add_child(&window.layer, &diceLayer.layer);
 	layer_add_child(&window.layer, &statusLayer.layer);
+	layer_add_child(&window.layer, &diceValuesLayer.layer);
 	
 	// Attach our buttons
 	window_set_click_config_provider(&window, (ClickConfigProvider) config_provider);
@@ -270,10 +301,15 @@ void handle_init(AppContextRef ctx) {
 	set_diceLayer_text();
 }
 
+void handle_deinit(AppContextRef ctx)
+{
+        (void) ctx;
+}
 
 void pbl_main(void *params) {
 	PebbleAppHandlers handlers = {
-		.init_handler = &handle_init
+		.init_handler = &handle_init,
+		.deinit_handler = &handle_deinit
 		};
 	app_event_loop(params, &handlers);
 }
