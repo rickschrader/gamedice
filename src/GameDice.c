@@ -33,23 +33,25 @@ typedef struct {
 	int values[MAX_NUMBER_OF_DICE];
 } Dice;
 
-static Window window;
+Window window;
 
-static TextLayer numberLayer;
-static TextLayer diceLayer;
-static TextLayer statusLayer;
-static TextLayer diceValuesLayer;
+TextLayer numberLayer;
+TextLayer diceLayer;
+TextLayer statusLayer;
+TextLayer diceValuesLayer;
 
-static PropertyAnimation prop_animation_out;
-static PropertyAnimation prop_animation_in;
-static PropertyAnimation prop_animation_in2;
-//static PropertyAnimation prop_animation_dice_values;
+PropertyAnimation prop_animation_out;
+PropertyAnimation prop_animation_in;
+PropertyAnimation prop_animation_in2;
+PropertyAnimation prop_animation_dice_values_out;
+PropertyAnimation prop_animation_dice_values_in;
 
-static Dice die;
-static long seed;
-static bool updateCountText;
-static const int faces[] = {3, 4, 6, 8, 10, 12, 20, 100};
-static char diceValues[60];
+Dice die;
+long seed;
+bool updateCountText;
+const int faces[] = {3, 4, 6, 8, 10, 12, 20, 100};
+char diceValues[100] = {};
+
 
 void construct_dice_values();
 
@@ -76,9 +78,91 @@ long get_seconds()
 		+ ((t.tm_year+299)/400)*86400; 	// add a leap day back every 400 years, starting in 2001 
 }
 
+/*
+* I had some troubles that I tracked down to what was happening in itoa(). As that still isn't solved
+* I'm leaving itoa3() and itoa4() here, but coommented, until the issue is completely solved.
+*/
+
+// char *itoa3(i)
+//      int i;
+// {
+//   static char buf[11 + 2];
+//   char *p = buf + 11 + 1;
+//   if (i >= 0) {
+//     do {
+//       *--p = '0' + (i % 10);
+//       i /= 10;
+//     } while (i != 0);
+//     return p;
+//   }
+//   return p;
+// }
+
+// void itoa4(char *buf, int base, int d) {
+//         char *p = buf;
+//         char *p1, *p2;
+//         unsigned long ud = d;
+//         int divisor = 10;
+// 
+//         /* If %d is specified and D is minus, put `-' in the head.  */
+//         if (base == 'd' && d < 0) {
+//                 *p++ = '-';
+//                 buf++;
+//                 ud = -d;
+//         } else if (base == 'x') {
+//                 divisor = 16;
+//         }
+// 
+//         /* Divide UD by DIVISOR until UD == 0.  */
+//         do {
+//                 int remainder = ud % divisor;
+// 
+//                 *p++ = (remainder < 10) ? remainder + '0' : remainder + 'a' - 10;
+//         } while (ud /= divisor);
+// 
+//         /* Terminate BUF.  */
+//         *p = 0;
+// 
+//         /* Reverse BUF.  */
+//         p1 = buf;
+//         p2 = p - 1;
+//         while (p1 < p2) {
+//                 char tmp = *p1;
+//                 *p1 = *p2;
+//                 *p2 = tmp;
+//                 p1++;
+//                 p2--;
+//         }
+// }
+
 char *itoa(int num)
 {
-	static char buff[20] = {};
+	static char buff[20];
+	int i = 0, temp_num = num, length = 0;
+	char *string = buff;
+	
+	if(num >= 0) {
+		while(temp_num) {
+			temp_num /= 10;
+			length++;
+		}
+		
+		for(i = 0; i < length; i++) {
+		 	buff[(length-1)-i] = '0' + (num % 10);
+			num /= 10;
+		}
+		buff[i] = '\0';
+	}
+	else
+		return "Unsupported Number";
+	
+	return string;
+}
+
+// It is silly that this is needed twice. It shouldn't be, but I haven't figured out the problem yet.
+char *itoa2(int num)
+{
+	static char buff[20];
 	int i = 0, temp_num = num, length = 0;
 	char *string = buff;
 	
@@ -107,18 +191,11 @@ int random(int max)
 	return ((seed % max) + 1);
 }
 
-void change()
-{
-	text_layer_set_text(&diceValuesLayer, diceValues);
-}
-
 void number_animation_stopped_handler2(Animation *animation, bool finished, void *context)
 {
 	GRect rect = layer_get_frame(&numberLayer.layer);
 	rect.origin.y = REST_SPOT;
-	
-	text_layer_set_text(&diceValuesLayer, diceValues);
-	
+		
 	property_animation_init_layer_frame(&prop_animation_in2, &numberLayer.layer, NULL, &rect);
 	animation_set_duration(&prop_animation_in2.animation, ANIMATION_SPEED);
 	animation_set_curve(&prop_animation_in2.animation, AnimationCurveEaseInOut);
@@ -127,9 +204,11 @@ void number_animation_stopped_handler2(Animation *animation, bool finished, void
 
 void number_animation_stopped_handler1(Animation *animation, bool finished, void *context)
 {
-	char *numberText = itoa(die.value);
+	char *numberText = "    ";
+	mini_snprintf(numberText, 4, "%d", die.value); 
 	text_layer_set_text(&numberLayer, numberText);
-
+	text_layer_set_text(&diceValuesLayer, diceValues);
+		
 	GRect rect = layer_get_frame(&numberLayer.layer);
 	rect.origin.y = BOUNCE_SPOT;
 	
@@ -159,6 +238,7 @@ void roll_dice()
 {	
 	int i = 0;
 	die.value = 0;
+	
 	memset(&die.values[0], 0, sizeof(die.values)); // clear the array's old elements
 	
 	for(i = 0; i < die.count; i++) {
@@ -173,19 +253,26 @@ void construct_dice_values()
 	if(die.count > 1)
 	{
 		memset(&diceValues[0], 0, sizeof(diceValues)); // clear the array's old elements
-		const char *pad = "Rolled: ";
+
 		int k;
 		int n = sizeof(die.values)/sizeof(die.values[0]);
 		for (k = 0; k < n; k++)
 		{
-			char *temp = itoa(die.values[k]);
-			if(strlen(temp))
+			char *temp = itoa2(die.values[k]);
+			//char *temp = "k";
+			// char *temp = "";
+			// mini_snprintf(temp, 8, "%d", die.values[k]); 
+			if(strlen(temp) && strcmp(temp, "0") != 0)
 			{
-				strcat(diceValues, pad);
+				if(k > 0)
+					strcat(diceValues, ", ");
 			    strcat(diceValues, temp);
-				pad = ", ";
 			}
 		}
+	}
+	else
+	{
+		memset(&diceValues[0], 0, sizeof(diceValues));
 	}
 }
 
@@ -205,8 +292,9 @@ void select_single_click_handler(ClickRecognizerRef recognizer, Window *window)
 void select_long_click_handler(ClickRecognizerRef recognizer, Window *window) 
 {
 	roll_dice();
-	do_number_animation();
 	construct_dice_values();
+	do_number_animation();	
+	//do_values_animation();
 }
 
 void set_diceLayer_text()
@@ -285,10 +373,13 @@ void handle_init(AppContextRef ctx) {
 	text_layer_set_text(&statusLayer, FACES_TEXT);
 
 	// Dice values layer
-	text_layer_init(&diceValuesLayer, GRect(0, 0, SCREEN_WIDTH, 18));
+	text_layer_init(&diceValuesLayer, GRect(0, 43, SCREEN_WIDTH, 18));
 	text_layer_set_font(&diceValuesLayer, fonts_get_system_font(STATUS_FONT));
 	text_layer_set_text_color(&diceValuesLayer, GColorBlack);
+	// text_layer_set_text_color(&diceValuesLayer, GColorWhite);
+	// text_layer_set_background_color(&diceValuesLayer, GColorBlack);	
 	text_layer_set_text_alignment(&diceValuesLayer, GTextAlignmentCenter);
+	text_layer_set_text(&numberLayer, "?");
 	
 	// Number layer
 	text_layer_init(&numberLayer, GRect(0, REST_SPOT, SCREEN_WIDTH, 50));
@@ -300,10 +391,11 @@ void handle_init(AppContextRef ctx) {
 	text_layer_set_text(&numberLayer, "0");
 
 	// Load layers
-	layer_add_child(&window.layer, &diceValuesLayer.layer);
 	layer_add_child(&window.layer, &numberLayer.layer);
+	layer_add_child(&numberLayer.layer, &diceValuesLayer.layer);
 	layer_add_child(&window.layer, &diceLayer.layer);
 	layer_add_child(&window.layer, &statusLayer.layer);
+	layer_set_clips(&numberLayer.layer, false);
 	
 	// Attach our buttons
 	window_set_click_config_provider(&window, (ClickConfigProvider) config_provider);
@@ -312,6 +404,7 @@ void handle_init(AppContextRef ctx) {
 	die.face = 6;
 	die.count = 1;
 	die.value = 0;
+
 	set_diceLayer_text();
 }
 
