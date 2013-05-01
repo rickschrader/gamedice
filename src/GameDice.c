@@ -3,12 +3,11 @@
 #include "pebble_fonts.h"
 #include "resource_ids.auto.h"
 #include "mini-printf.h"
-#include "string.h"
 
 #define MY_UUID { 0x72, 0xC3, 0x7C, 0x97, 0xC9, 0xA0, 0x47, 0x7B, 0x83, 0xCC, 0x8F, 0xD6, 0x07, 0xD5, 0x87, 0xEE }
 #define DICE_FONT FONT_KEY_GOTHIC_28_BOLD
 #define STATUS_FONT FONT_KEY_GOTHIC_14
-#define VALUES_FONT FONT_KEY_GOTHIC_24
+#define VALUES_FONT FONT_KEY_GOTHIC_14_BOLD
 #define NUMBERS_FONT FONT_KEY_GOTHAM_42_BOLD
 #define QUANTITY_TEXT "#d"
 #define FACES_TEXT "d#"
@@ -18,11 +17,11 @@
 #define SCREEN_HEIGHT 168
 #define REPEAT_SPEED 500
 #define ANIMATION_SPEED 500
-#define MAX_NUMBER_OF_DICE 10
+#define MAX_NUMBER_OF_DICE 50
 
 PBL_APP_INFO(MY_UUID,
              "Game Dice", "Chris Goltz",
-             1, 1, /* App version */
+             1, 2, /* App version */
              RESOURCE_ID_IMAGE_MENU_ICON,
              APP_INFO_STANDARD_APP);
 
@@ -30,7 +29,8 @@ typedef struct {
 	int count;
 	int face;
 	int value;
-	int values[MAX_NUMBER_OF_DICE];
+	//int values[MAX_NUMBER_OF_DICE];
+	char stringValues[5*MAX_NUMBER_OF_DICE]; // '123, ' * max will hold everything possible
 } Dice;
 
 Window window;
@@ -43,17 +43,11 @@ TextLayer diceValuesLayer;
 PropertyAnimation prop_animation_out;
 PropertyAnimation prop_animation_in;
 PropertyAnimation prop_animation_in2;
-PropertyAnimation prop_animation_dice_values_out;
-PropertyAnimation prop_animation_dice_values_in;
 
 Dice die;
 long seed;
 bool updateCountText;
 const int faces[] = {3, 4, 6, 8, 10, 12, 20, 100};
-char diceValues[100] = {};
-
-
-void construct_dice_values();
 
 
 void formatDiceString(char *string, Dice die) 
@@ -159,30 +153,29 @@ char *itoa(int num)
 	return string;
 }
 
-// It is silly that this is needed twice. It shouldn't be, but I haven't figured out the problem yet.
-char *itoa2(int num)
-{
-	static char buff[20];
-	int i = 0, temp_num = num, length = 0;
-	char *string = buff;
-	
-	if(num >= 0) {
-		while(temp_num) {
-			temp_num /= 10;
-			length++;
-		}
-		
-		for(i = 0; i < length; i++) {
-		 	buff[(length-1)-i] = '0' + (num % 10);
-			num /= 10;
-		}
-		buff[i] = '\0';
-	}
-	else
-		return "Unsupported Number";
-	
-	return string;
-}
+// char *itoa2(int num)
+// {
+// 	static char buff[20];
+// 	int i = 0, temp_num = num, length = 0;
+// 	char *string = buff;
+// 	
+// 	if(num >= 0) {
+// 		while(temp_num) {
+// 			temp_num /= 10;
+// 			length++;
+// 		}
+// 		
+// 		for(i = 0; i < length; i++) {
+// 		 	buff[(length-1)-i] = '0' + (num % 10);
+// 			num /= 10;
+// 		}
+// 		buff[i] = '\0';
+// 	}
+// 	else
+// 		return "Unsupported Number";
+// 	
+// 	return string;
+// }
 
 int random(int max) 
 {
@@ -207,7 +200,7 @@ void number_animation_stopped_handler1(Animation *animation, bool finished, void
 	char *numberText = "    ";
 	mini_snprintf(numberText, 4, "%d", die.value); 
 	text_layer_set_text(&numberLayer, numberText);
-	text_layer_set_text(&diceValuesLayer, diceValues);
+	text_layer_set_text(&diceValuesLayer, die.stringValues);
 		
 	GRect rect = layer_get_frame(&numberLayer.layer);
 	rect.origin.y = BOUNCE_SPOT;
@@ -225,6 +218,12 @@ void do_number_animation() {
 	GRect rect = layer_get_frame(&numberLayer.layer);
 	rect.origin.y = 100;
 	
+	// There's three options 1. not set the text layer and have the text update too soon, or
+	// 2. not set a null string and have the layer update to the dice string (eg. 1d20) or
+	// 3. set a null string, and have it blink out. I can't figure out if 1 and 2 are bugs
+	// on my end or the SDK.
+	text_layer_set_text(&diceValuesLayer, "\0");
+	
 	property_animation_init_layer_frame(&prop_animation_out, &numberLayer.layer, NULL, &rect);
 	animation_set_duration(&prop_animation_out.animation, ANIMATION_SPEED);
 	animation_set_curve(&prop_animation_out.animation, AnimationCurveEaseInOut);
@@ -239,40 +238,22 @@ void roll_dice()
 	int i = 0;
 	die.value = 0;
 	
-	memset(&die.values[0], 0, sizeof(die.values)); // clear the array's old elements
+	//memset(&die.values[0], 0, sizeof(die.values)); // clear the array's old elements
+	memset(&die.stringValues[0], 0, sizeof(die.stringValues)); // clear the array's old elements
 	
 	for(i = 0; i < die.count; i++) {
 		int roll = random(faces[die.face]);
-		die.values[i] = roll;
+		//die.values[i] = roll;
 		die.value += roll;
-	}
-}
-
-void construct_dice_values()
-{
-	if(die.count > 1)
-	{
-		memset(&diceValues[0], 0, sizeof(diceValues)); // clear the array's old elements
-
-		int k;
-		int n = sizeof(die.values)/sizeof(die.values[0]);
-		for (k = 0; k < n; k++)
-		{
-			char *temp = itoa2(die.values[k]);
-			//char *temp = "k";
-			// char *temp = "";
-			// mini_snprintf(temp, 8, "%d", die.values[k]); 
-			if(strlen(temp) && strcmp(temp, "0") != 0)
-			{
-				if(k > 0)
-					strcat(diceValues, ", ");
-			    strcat(diceValues, temp);
+		
+		// Build the text for the individual dice
+		if(die.count > 1) {
+			char *temp = itoa(roll);
+			if(i > 0) {
+				strcat(die.stringValues, ", ");
 			}
+			strcat(die.stringValues, temp);
 		}
-	}
-	else
-	{
-		memset(&diceValues[0], 0, sizeof(diceValues));
 	}
 }
 
@@ -292,9 +273,7 @@ void select_single_click_handler(ClickRecognizerRef recognizer, Window *window)
 void select_long_click_handler(ClickRecognizerRef recognizer, Window *window) 
 {
 	roll_dice();
-	construct_dice_values();
 	do_number_animation();	
-	//do_values_animation();
 }
 
 void set_diceLayer_text()
@@ -307,7 +286,8 @@ void set_diceLayer_text()
 void up_single_click_handler (ClickRecognizerRef recognizer, Window *window) 
 {
 	if(updateCountText) {
-		die.count++;
+		if(die.count + 1 <= MAX_NUMBER_OF_DICE)
+			die.count++;
 	}
 	else {
 		if(die.face + 1 <= 7)
@@ -373,20 +353,15 @@ void handle_init(AppContextRef ctx) {
 	text_layer_set_text(&statusLayer, FACES_TEXT);
 
 	// Dice values layer
-	text_layer_init(&diceValuesLayer, GRect(0, 43, SCREEN_WIDTH, 18));
-	text_layer_set_font(&diceValuesLayer, fonts_get_system_font(STATUS_FONT));
+	text_layer_init(&diceValuesLayer, GRect(0, 43, SCREEN_WIDTH, 30));
+	text_layer_set_font(&diceValuesLayer, fonts_get_system_font(VALUES_FONT));
 	text_layer_set_text_color(&diceValuesLayer, GColorBlack);
-	// text_layer_set_text_color(&diceValuesLayer, GColorWhite);
-	// text_layer_set_background_color(&diceValuesLayer, GColorBlack);	
 	text_layer_set_text_alignment(&diceValuesLayer, GTextAlignmentCenter);
-	text_layer_set_text(&numberLayer, "?");
 	
 	// Number layer
 	text_layer_init(&numberLayer, GRect(0, REST_SPOT, SCREEN_WIDTH, 50));
 	text_layer_set_font(&numberLayer, fonts_get_system_font(NUMBERS_FONT));
 	text_layer_set_text_color(&numberLayer, GColorBlack);
-	// text_layer_set_text_color(&numberLayer, GColorWhite);
-	// text_layer_set_background_color(&numberLayer, GColorBlack);
 	text_layer_set_text_alignment(&numberLayer, GTextAlignmentCenter);
 	text_layer_set_text(&numberLayer, "0");
 
@@ -395,7 +370,7 @@ void handle_init(AppContextRef ctx) {
 	layer_add_child(&numberLayer.layer, &diceValuesLayer.layer);
 	layer_add_child(&window.layer, &diceLayer.layer);
 	layer_add_child(&window.layer, &statusLayer.layer);
-	layer_set_clips(&numberLayer.layer, false);
+	layer_set_clips(&numberLayer.layer, false); // allow diceValuesLayer to extend beyond the layer
 	
 	// Attach our buttons
 	window_set_click_config_provider(&window, (ClickConfigProvider) config_provider);
