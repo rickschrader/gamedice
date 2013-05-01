@@ -16,3 +16,7 @@ To use:
 * Select Button (normal press) - Switch between updating the dice's sides (d#), and the quantity of dice to roll (#d)
 * Up Button - Increase the dice's sides (d#) or dice quantity (#d). Hold this button for speedy changes.
 * Down Button - Decrease the dice's sides (d#) or dice quantity (#d). Hold this button for speedy changes.
+
+Updates
+=======
+Version 1.2 - Added support for displaying the individual dice values in a multi-dice roll
