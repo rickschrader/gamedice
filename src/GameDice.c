@@ -72,63 +72,6 @@ long get_seconds()
 		+ ((t.tm_year+299)/400)*86400; 	// add a leap day back every 400 years, starting in 2001 
 }
 
-/*
-* I had some troubles that I tracked down to what was happening in itoa(). As that still isn't solved
-* I'm leaving itoa3() and itoa4() here, but coommented, until the issue is completely solved.
-*/
-
-// char *itoa3(i)
-//      int i;
-// {
-//   static char buf[11 + 2];
-//   char *p = buf + 11 + 1;
-//   if (i >= 0) {
-//     do {
-//       *--p = '0' + (i % 10);
-//       i /= 10;
-//     } while (i != 0);
-//     return p;
-//   }
-//   return p;
-// }
-
-// void itoa4(char *buf, int base, int d) {
-//         char *p = buf;
-//         char *p1, *p2;
-//         unsigned long ud = d;
-//         int divisor = 10;
-// 
-//         /* If %d is specified and D is minus, put `-' in the head.  */
-//         if (base == 'd' && d < 0) {
-//                 *p++ = '-';
-//                 buf++;
-//                 ud = -d;
-//         } else if (base == 'x') {
-//                 divisor = 16;
-//         }
-// 
-//         /* Divide UD by DIVISOR until UD == 0.  */
-//         do {
-//                 int remainder = ud % divisor;
-// 
-//                 *p++ = (remainder < 10) ? remainder + '0' : remainder + 'a' - 10;
-//         } while (ud /= divisor);
-// 
-//         /* Terminate BUF.  */
-//         *p = 0;
-// 
-//         /* Reverse BUF.  */
-//         p1 = buf;
-//         p2 = p - 1;
-//         while (p1 < p2) {
-//                 char tmp = *p1;
-//                 *p1 = *p2;
-//                 *p2 = tmp;
-//                 p1++;
-//                 p2--;
-//         }
-// }
-
 char *itoa(int num)
 {
 	static char buff[20];
@@ -152,30 +95,6 @@ char *itoa(int num)
 	
 	return string;
 }
-
-// char *itoa2(int num)
-// {
-// 	static char buff[20];
-// 	int i = 0, temp_num = num, length = 0;
-// 	char *string = buff;
-// 	
-// 	if(num >= 0) {
-// 		while(temp_num) {
-// 			temp_num /= 10;
-// 			length++;
-// 		}
-// 		
-// 		for(i = 0; i < length; i++) {
-// 		 	buff[(length-1)-i] = '0' + (num % 10);
-// 			num /= 10;
-// 		}
-// 		buff[i] = '\0';
-// 	}
-// 	else
-// 		return "Unsupported Number";
-// 	
-// 	return string;
-// }
 
 int random(int max) 
 {
@@ -218,7 +137,7 @@ void do_number_animation() {
 	GRect rect = layer_get_frame(&numberLayer.layer);
 	rect.origin.y = 100;
 	
-	// There's three options 1. not set the text layer and have the text update too soon, or
+	// There's three options: 1. not set the text layer and have the text update too soon, or
 	// 2. not set a null string and have the layer update to the dice string (eg. 1d20) or
 	// 3. set a null string, and have it blink out. I can't figure out if 1 and 2 are bugs
 	// on my end or the SDK.
@@ -238,12 +157,10 @@ void roll_dice()
 	int i = 0;
 	die.value = 0;
 	
-	//memset(&die.values[0], 0, sizeof(die.values)); // clear the array's old elements
 	memset(&die.stringValues[0], 0, sizeof(die.stringValues)); // clear the array's old elements
 	
 	for(i = 0; i < die.count; i++) {
 		int roll = random(faces[die.face]);
-		//die.values[i] = roll;
 		die.value += roll;
 		
 		// Build the text for the individual dice
