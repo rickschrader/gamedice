@@ -20,3 +20,4 @@ Useage
 Updates
 ----
 Version 1.2 - Added support for displaying the individual dice values in a multi-dice roll
+Version 1.3 - Users can now roll a "default" die with a double-press of the select button
