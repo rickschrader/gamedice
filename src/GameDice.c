@@ -21,7 +21,7 @@
 
 PBL_APP_INFO(MY_UUID,
              "Game Dice", "Chris Goltz",
-             1, 2, /* App version */
+             1, 3, /* App version */
              RESOURCE_ID_IMAGE_MENU_ICON,
              APP_INFO_STANDARD_APP);
 
@@ -44,16 +44,16 @@ PropertyAnimation prop_animation_out;
 PropertyAnimation prop_animation_in;
 PropertyAnimation prop_animation_in2;
 
-Dice die;
+Dice displayDie, specialDie, normalDie;
 long seed;
 bool updateCountText;
 const int faces[] = {3, 4, 6, 8, 10, 12, 20, 100};
 
 
-void formatDiceString(char *string, Dice die) 
+void formatDiceString(char *string) 
 {	
 	char *t = "%dd%d";
-	mini_snprintf(string, 8, t, die.count, faces[die.face]); 
+	mini_snprintf(string, 8, t, normalDie.count, faces[normalDie.face]); 
 }
 
 long get_seconds() 
@@ -117,9 +117,9 @@ void number_animation_stopped_handler2(Animation *animation, bool finished, void
 void number_animation_stopped_handler1(Animation *animation, bool finished, void *context)
 {
 	char *numberText = "    ";
-	mini_snprintf(numberText, 4, "%d", die.value); 
+	mini_snprintf(numberText, 4, "%d", displayDie.value); 
 	text_layer_set_text(&numberLayer, numberText);
-	text_layer_set_text(&diceValuesLayer, die.stringValues);
+	text_layer_set_text(&diceValuesLayer, displayDie.stringValues);
 		
 	GRect rect = layer_get_frame(&numberLayer.layer);
 	rect.origin.y = BOUNCE_SPOT;
@@ -152,24 +152,24 @@ void do_number_animation() {
 	animation_schedule(&prop_animation_out.animation);
 }
 
-void roll_dice()
+void roll_dice(Dice* d)
 {	
 	int i = 0;
-	die.value = 0;
+	d->value = 0;
 	
-	memset(&die.stringValues[0], 0, sizeof(die.stringValues)); // clear the array's old elements
+	memset(&d->stringValues[0], 0, sizeof(d->stringValues)); // clear the array's old elements
 	
-	for(i = 0; i < die.count; i++) {
-		int roll = random(faces[die.face]);
-		die.value += roll;
+	for(i = 0; i < d->count; i++) {
+		int roll = random(faces[d->face]);
+		d->value += roll;
 		
 		// Build the text for the individual dice
-		if(die.count > 1) {
+		if(d->count > 1) {
 			char *temp = itoa(roll);
 			if(i > 0) {
-				strcat(die.stringValues, ", ");
+				strcat(d->stringValues, ", ");
 			}
-			strcat(die.stringValues, temp);
+			strcat(d->stringValues, temp);
 		}
 	}
 }
@@ -185,30 +185,40 @@ void select_single_click_handler(ClickRecognizerRef recognizer, Window *window)
 	{
 		text_layer_set_text(&statusLayer, FACES_TEXT);
 	}
+	
+}
+
+void select_multi_click_handler(ClickRecognizerRef recognizer, Window *window) 
+{
+	roll_dice(&specialDie);
+	strcpy(specialDie.stringValues, "Quick 1d20");
+	displayDie = specialDie;
+	do_number_animation();
 }
 
 void select_long_click_handler(ClickRecognizerRef recognizer, Window *window) 
 {
-	roll_dice();
-	do_number_animation();	
+	roll_dice(&normalDie);
+	displayDie = normalDie;
+	do_number_animation();
 }
 
 void set_diceLayer_text()
 {
 	char *text = "";
-	formatDiceString(text, die);
+	formatDiceString(text);
 	text_layer_set_text(&diceLayer, text);
 }
 
 void up_single_click_handler (ClickRecognizerRef recognizer, Window *window) 
 {
 	if(updateCountText) {
-		if(die.count + 1 <= MAX_NUMBER_OF_DICE)
-			die.count++;
+		if(normalDie.count + 1 <= MAX_NUMBER_OF_DICE)
+			normalDie.count++;
 	}
 	else {
-		if(die.face + 1 <= 7)
-			die.face++;
+		if(normalDie.face + 1 <= 7)
+			normalDie.face++;
 	}
 	set_diceLayer_text();
 }
@@ -216,12 +226,12 @@ void up_single_click_handler (ClickRecognizerRef recognizer, Window *window)
 void down_single_click_handler (ClickRecognizerRef recognizer, Window *window) 
 {
 	if(updateCountText) {
-		if(die.count - 1 >= 1)
-			die.count--;
+		if(normalDie.count - 1 >= 1)
+			normalDie.count--;
 	}
 	else {
-		if(die.face - 1 >= 0)
-			die.face--;
+		if(normalDie.face - 1 >= 0)
+			normalDie.face--;
 	}
 	set_diceLayer_text();
 }
@@ -233,6 +243,9 @@ void config_provider(ClickConfig **config, Window *window)
 	// Select button handlers
 	config[BUTTON_ID_SELECT]->click.handler = (ClickHandler) select_single_click_handler;
 	config[BUTTON_ID_SELECT]->long_click.handler = (ClickHandler) select_long_click_handler;
+	config[BUTTON_ID_SELECT]->multi_click.handler = (ClickHandler) select_multi_click_handler;
+	config[BUTTON_ID_SELECT]->multi_click.min = 2;
+	config[BUTTON_ID_SELECT]->multi_click.max = 2;
 
 	// Up button handlers
 	config[BUTTON_ID_UP]->click.handler = (ClickHandler) up_single_click_handler;
@@ -292,11 +305,13 @@ void handle_init(AppContextRef ctx) {
 	// Attach our buttons
 	window_set_click_config_provider(&window, (ClickConfigProvider) config_provider);
 	
-	// Set up the die
-	die.face = 6;
-	die.count = 1;
-	die.value = 0;
-
+	// Set up the dice
+	normalDie.face = 6;
+	normalDie.count = 1;
+	normalDie.value = 0;
+	specialDie.face = 6;
+	specialDie.count = 1;
+	specialDie.value = 0;
 	set_diceLayer_text();
 }
 
