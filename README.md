@@ -10,7 +10,7 @@ Screen Sections
 * The second section, with the white background, contains the result of the dice roll -- with an animated fly in.
 * The lower black section contains both the dice being rolled in standard dice notation (1d20, 8d100, 2d4, etc.) and the button mode -- #d for changing the number of dice to roll, and d# for changing the sides on the dice being rolled.
 
-Useage
+Usage
 ----
 * Select Button (long press) - Roll the die!
 * Select Button (normal press) - Switch between updating the dice's sides (d#), and the quantity of dice to roll (#d)
