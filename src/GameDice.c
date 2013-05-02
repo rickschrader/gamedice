@@ -203,6 +203,11 @@ void select_long_click_handler(ClickRecognizerRef recognizer, Window *window)
 	do_number_animation();
 }
 
+void select_long_release_handler(ClickRecognizerRef recognizer, Window *window) 
+{
+	// Without this, the "double-click" after a long press is only a single click
+}
+
 void set_diceLayer_text()
 {
 	char *text = "";
@@ -246,6 +251,7 @@ void config_provider(ClickConfig **config, Window *window)
 	config[BUTTON_ID_SELECT]->multi_click.handler = (ClickHandler) select_multi_click_handler;
 	config[BUTTON_ID_SELECT]->multi_click.min = 2;
 	config[BUTTON_ID_SELECT]->multi_click.max = 2;
+	config[BUTTON_ID_SELECT]->long_click.release_handler = (ClickHandler) select_long_release_handler;
 
 	// Up button handlers
 	config[BUTTON_ID_UP]->click.handler = (ClickHandler) up_single_click_handler;
