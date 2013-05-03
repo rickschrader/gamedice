@@ -10,13 +10,15 @@ Screen Sections
 * The second section, with the white background, contains the result of the dice roll -- with an animated fly in.
 * The lower black section contains both the dice being rolled in standard dice notation (1d20, 8d100, 2d4, etc.) and the button mode -- #d for changing the number of dice to roll, and d# for changing the sides on the dice being rolled.
 
-Useage
+Usage
 ----
 * Select Button (long press) - Roll the die!
 * Select Button (normal press) - Switch between updating the dice's sides (d#), and the quantity of dice to roll (#d)
+* Select Button (double press) - Roll a "default" die quickly. Currently this is 1d20, but that will change when settings can be saved.
 * Up Button - Increase the dice's sides (d#) or dice quantity (#d). Hold this button for speedy changes.
 * Down Button - Decrease the dice's sides (d#) or dice quantity (#d). Hold this button for speedy changes.
 
 Updates
 ----
-Version 1.2 - Added support for displaying the individual dice values in a multi-dice roll
+* Version 1.2 - Added support for displaying the individual dice values in a multi-dice roll
+* Version 1.3 - Users can now roll a "default" die (currently 1d20) with a double-press of the select button
